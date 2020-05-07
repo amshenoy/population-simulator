@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+	<head>
+	<title>Population Simulator</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<meta name="description" content="Compartmental model creator for analysing population dynamics.">
+	<meta name="keywords" content="compartmental, ctmc, population, dynamics, systems, model, integrator, engineering">
+	<meta name="author" content="Abhishek Shenoy">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+	<link href="./assets/css/styles.css" rel="stylesheet" type="text/css"></link>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.4.1/css/bootstrap.min.css"/>
+	<link rel="stylesheet" type="text/css" href="./assets/css/tagsinput.css"/>
+	<link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-tagsinput/0.8.0/bootstrap-tagsinput-typeahead.css"/>
+
+	</head>
+	<body>
+		<div class="wrapper">
+		
+			<!-- Sidebar -->
+			<nav id="sidebar">
+				
+				<span class="input-group-text" style="font-size: 12px;" data-toggle="tooltip" title="Format: comma separated {node_name}:{value} To set initial conditions for a node append 0 to the node name ie. {node_name}0:{value} so inital condition for node A would be written as A0:1000.">Custom Variables</span>
+				<select multiple id="customvars" data-role="tagsinput" style="width:230px;"> </select>
+						
+				</br></br>
+				
+				<span class="input-group-text" style="font-size: 12px;"  data-toggle="tooltip" title="Format: comma separated {node1}:{node2}:{expression}">Adjacency List</span>
+				<select multiple id="adjlist" data-role="tagsinput" style="width:230px; height: 100px;"> </select>
+					
+				</br></br>
+				
+				<button id="export" class="btn btn-primary">Export System</button>
+					
+				</br></br>
+				<span id="msg-box" class="alert alert-primary" role="alert" style="display:block; width:230px;" ></span>
+				
+				</br></br>
+				
+				<div class="card" style="color: #555; font-size: 12px;">
+				  <div class="card-header">Examples</div>
+				  <ul class="list-group list-group-flush">
+					<li class="list-group-item" data-toggle="tooltip" title="Disease Model 1"><a class="ex-link" data-example="S,E,I,R|S0:999,E0:1,d:0.20,y:0.33|S:E:I/(S0+E0),E:I:d,I:R:y|80|1">SEIR (C)</a></li>
+					<li class="list-group-item" data-toggle="tooltip" title="Disease Model 2"><a class="ex-link" data-example="S,E,I,R,D|S0:999,E0:1,d:0.20,y:0.33,a:0.05,p:1|S:E:I/(S0+E0),E:I:d,I:R:y*(1-a),I:D:p*a|80|1">SEIRD (C)</a></li>
+					<li class="list-group-item" data-toggle="tooltip" title="Lotka-Volterra with implicit sinks and sources"><a class="ex-link" data-example="F,R|F0:80,R0:40,a:12,b:0.1,c:0.2,d:9|F:F:c*R-d,R:R:a-b*F|5|1">LV - FR 1 (C or NC)</a></li>
+					<li class="list-group-item" data-toggle="tooltip" title="Lotka-Volterra with implicit sinks and sources - Using a non-compartmental model provides deeper understanding"><a class="ex-link" data-example="F,R|F0:80,R0:40,a:12,b:0.1,c:0.2,d:9|F:F:-d,R:R:a,F:R:-b*R,R:F:c*F|5|0">LV - FR 2 (NC)</a></li>
+					<li class="list-group-item" data-toggle="tooltip" title="Lotka-Volterra with a sink (death) node"><a class="ex-link" data-example="F,R,D|F0:80,R0:40,a:12,b:0.1,c:0.2,d:9|F:F:c*R,R:D:b*F,R:R:a,F:D:d|5|1">LV - FRD (C)</a></li>
+					<li class="list-group-item" data-toggle="tooltip" title="Lotka-Volterra with source (birth) and sink (death) nodes"><a class="ex-link" data-example="F,R,B,D|B0:1,F0:80,R0:40,a:12,b:0.1,c:0.2,d:9|B:B:(c*F+a)*R/B,B:F:c*R*F/B,R:D:b*F,B:R:a*R/B,F:D:d|5|1">LV - FRBD (C)</a></li>
+				  </ul>
+				</div>
+				
+			</nav>
+
+			<!-- Page Content -->
+			<div id="content">
+
+				<div class="input-group mb-3">
+					
+					<!--
+					<button type="button" id="sidebarCollapse" class="btn btn-info">
+						<span class="navbar-toggler-icon"></span>
+					</button>
+					
+					&emsp;&emsp;
+					-->
+					
+					<div class="input-group-prepend">
+						<span class="input-group-text" style="font-size: 12px;" data-toggle="tooltip" title="Enter compartment nodes">Nodes</span>
+						<select multiple id="nodes" data-role="tagsinput" style="width:350px;"> </select>
+					</div>
+
+					&emsp;&emsp;
+
+					<div class="input-group-prepend">
+						<span class="input-group-text" style="font-size: 12px;"  data-toggle="tooltip" title="Enter end time for integration. Note*: Units dependent on specified system.">End Time</span>
+						<input id="endtime" class="form-control" type="number" value="0" style="width:100px;"></input>
+					</div>
+					
+					&emsp;&emsp;
+					
+					<div class="input-group-prepend">
+						<div class="input-group-text" style="font-size: 14px;" data-toggle="tooltip" title="Compartmental model means transfer from one node to another while a non-compartmental model means effect of one node on another. See LV examples... Important if Q matrix is non-diagonal!"><input type="checkbox" id="compartmental" aria-label="Compartmental" checked>&nbsp; Compartments</div>
+					</div>
+					  
+					&emsp;&emsp;&emsp;
+					
+					
+					<button id="simulate" class="btn btn-primary">
+						<span id="sim-available">Simulate</span>
+						<span id="sim-loading"class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true"></span>
+					</button>
+				
+				</div>
+						
+				<div>
+					<h2>Model Simulation</h2>
+					<div id="graph1" ></div>
+					<div id="latex-eqs" class="math" style="text-align:center"></div>
+					<svg id="digraph" width="960" height="360"></svg>
+
+				</div>
+			</div>
+
+		
+		<script src="https://code.jquery.com/jquery-3.4.1.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/6.6.0/math.min.js"></script>
+
+		<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.16.0/d3.min.js"></script>
+		
+		<!-- <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_SVG"></script> -->
+		
+		<script async defer src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+		<script async defer src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.4.1/js/bootstrap.min.js"></script>
+		
+		<script src="./assets/js/tagsinput.js"></script>
+		<script async type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+			
+		<script src="./assets/js/odex.js"></script>
+		<script src="./assets/js/app.js"></script>
+	
+	</body>
+</html>
