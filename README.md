@@ -12,4 +12,4 @@ Compartment model creator and simulator for continuous-time dynamical systems
 * Save and load systems as data strings
 
 
-Although designed for population dynamics, this web app can be used to solve any system of differential equations.
+Although designed for population dynamics, this web app can be used to solve any system of 1st order differential equations.
